@@ -33,6 +33,10 @@ Check "help has Usage" ($r.out -match "Usage") ""
 $r = Run @("problem", "create", "A + B")
 Check "problem create" ($r.out -match "Problem created with ID: 1") $r.out
 
+# T02b 'problem create help' prints usage instead of creating a problem
+$r = Run @("problem", "create", "help")
+Check "create help usage" (($r.code -eq 1) -and ($r.out -match "Usage: clijudge.exe problem create")) "code=$($r.code) out=$($r.out)"
+
 # T03 testdata (LF files, byte-exact compare)
 W "$work\in.txt" "1 2`n"
 W "$work\out.txt" "3`n"

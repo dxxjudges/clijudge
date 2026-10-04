@@ -457,7 +457,10 @@ int main(int argc, char* argv[]) {
         } else if (subCmd == "count") {
             return clijudge::problem::cmdCount(dataDir);
         } else if (subCmd == "create") {
-            if (argc < 4) {
+            // "help" 不是合法题目名: problem create help/-h/--help 输出用法而非建题
+            if (argc < 4 ||
+                strcmp(argv[3], "help") == 0 || strcmp(argv[3], "-h") == 0 ||
+                strcmp(argv[3], "--help") == 0) {
                 std::cerr << clijudge::lang::tr("usage.problem_create", "Usage: clijudge.exe problem create [title] [-background md] [-describe md] [-exampleio in out] [-instyle md] [-outstyle md] [-compare mode] [-spj-code md] [-spj-exe path] [-float-abs tol] [-float-rel tol] [-type type] [-subtask-mode mode] [-answer-ext ext] [-source-name name] [-dependence json] [-interactor file] [-grader dir] [-generator file] [-generator-exe path]") << std::endl;
                 return 1;
             }

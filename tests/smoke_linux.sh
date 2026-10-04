@@ -27,6 +27,10 @@ run help
 run problem create "A + B"
 echo "$OUT" | grep -q "Problem created with ID: 1"; t "problem create" $? "$OUT"
 
+# 'problem create help' prints usage instead of creating a problem
+run problem create help
+[ $CODE -eq 1 ] && echo "$OUT" | grep -q "Usage: clijudge.exe problem create"; t "create help usage" $? "code=$CODE $OUT"
+
 printf '1 2\n' > "$W/in.txt"; printf '3\n' > "$W/out.txt"
 run problem testdata 1 create "$W/in.txt" "$W/out.txt" 1000 256 50
 echo "$OUT" | grep -q "Test case created with ID: 1"; t "testdata create" $? "$OUT"
