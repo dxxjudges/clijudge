@@ -30,6 +30,10 @@ echo "$OUT" | grep -q "Problem created with ID: 1"; t "problem create" $? "$OUT"
 # 'problem create help' prints usage instead of creating a problem
 run problem create help
 [ $CODE -eq 1 ] && echo "$OUT" | grep -q "Usage: clijudge.exe problem create"; t "create help usage" $? "code=$CODE $OUT"
+run article create help
+[ $CODE -eq 1 ] && echo "$OUT" | grep -q "Usage: clijudge.exe article create"; t "article create help usage" $? "code=$CODE $OUT"
+run contest create help "2026-01-01 10:00:00" "2026-01-02 10:00:00" 1
+[ $CODE -eq 1 ] && echo "$OUT" | grep -q "Usage: clijudge.exe contest create"; t "contest create help usage" $? "code=$CODE $OUT"
 
 printf '1 2\n' > "$W/in.txt"; printf '3\n' > "$W/out.txt"
 run problem testdata 1 create "$W/in.txt" "$W/out.txt" 1000 256 50

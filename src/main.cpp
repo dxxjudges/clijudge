@@ -280,7 +280,10 @@ int main(int argc, char* argv[]) {
         } else if (subCmd == "count") {
             return clijudge::article::cmdCount(dataDir);
         } else if (subCmd == "create") {
-            if (argc < 4) {
+            // "help" 不是合法标题: article create help/-h/--help 输出用法而非建文
+            if (argc < 4 ||
+                strcmp(argv[3], "help") == 0 || strcmp(argv[3], "-h") == 0 ||
+                strcmp(argv[3], "--help") == 0) {
                 std::cerr << clijudge::lang::tr("usage.article_create", "Usage: clijudge.exe article create [title] [md_file]") << std::endl;
                 return 1;
             }
@@ -324,7 +327,10 @@ int main(int argc, char* argv[]) {
             showCommandHelp("contest");
             return 0;
         } else if (subCmd == "create") {
-            if (argc < 7) {
+            // "help" 不是合法标题: contest create help/-h/--help 输出用法而非建赛
+            if (argc < 7 ||
+                strcmp(argv[3], "help") == 0 || strcmp(argv[3], "-h") == 0 ||
+                strcmp(argv[3], "--help") == 0) {
                 std::cerr << clijudge::lang::tr("usage.contest_create", "Usage: clijudge.exe contest create [title] [start] [end] [prob1] [prob2]") << std::endl;
                 return 1;
             }
