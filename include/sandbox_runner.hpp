@@ -1012,14 +1012,22 @@ inline size_t countPgidProcs(pid_t pgid) {
 #define SECCOMP_RET_KILL_PROCESS 0x80000000U
 #endif
 
-// ── 构建 seccomp 过滤器（仅 x86_64; 父进程内构建, 子进程内安装）────
+// ── 构建 seccomp 过滤器（仅 x86_64/aarch64; 父进程内构建, 子进程内安装）────
 // denyProcessCreate: untrusted 且 maxProcesses==1 → 拒绝创建进程
 //   (fork/vfork/clone 无 CLONE_THREAD → EPERM; clone3 → ENOSYS 使 glibc
-//    回退到 clone; 线程创建不受限 — 对齐 Windows ActiveProcessLimit=1)。
+//    回退到 clone; 线程创建不受限 — 对齐 Windows ActiveProcessLimit=1;
+//    aarch64 无 fork/vfork 系统调用, glibc fork/vfork 经 clone → 同样被拦)。
 // 恒定规则: socket → EAFNOSUPPORT (无网络, 补 NEWNET 缺失时的兜底);
 //   敌意系统调用 → SIGSYS; 探测型 (clone3/io_uring/bpf/...) → ENOSYS。
-// 非 x86_64 架构 (如 -m32 走 i386) 一律放行。
-#ifdef __x86_64__
+// 系统调用号一律取 __NR_* 宏 (aarch64 编号与 x86_64 完全不同); 该架构
+// 不存在的调用 (fork/vfork/mknod/iopl/ioperm/modify_ldt/uselib) 用
+// #ifdef 跳过, 保证两侧行为一致。
+// 其它架构 (如 -m32 走 i386) 一律放行。
+#if defined(__x86_64__) || defined(__aarch64__)
+#define CLIJUDGE_SECCOMP_ARCH 1
+#endif
+
+#ifdef CLIJUDGE_SECCOMP_ARCH
 inline std::vector<struct sock_filter> buildSeccompFilter(bool denyProcessCreate) {
     std::vector<struct sock_filter> f;
     auto stmt = [&](unsigned short code, unsigned int k) {
@@ -1028,9 +1036,13 @@ inline std::vector<struct sock_filter> buildSeccompFilter(bool denyProcessCreate
     auto jmp = [&](unsigned short code, unsigned int k, unsigned char jt, unsigned char jf) {
         f.push_back(sock_filter{code, jt, jf, k});
     };
-    // 架构检查: 非 x86_64 → 直接放行
+    // 架构检查: 非本架构 (如 arm64 上的 AArch32 兼容进程) → 直接放行
     stmt(BPF_LD | BPF_W | BPF_ABS, 4);
+#ifdef __aarch64__
+    jmp(BPF_JMP | BPF_JEQ | BPF_K, AUDIT_ARCH_AARCH64, 1, 0);
+#else
     jmp(BPF_JMP | BPF_JEQ | BPF_K, AUDIT_ARCH_X86_64, 1, 0);
+#endif
     stmt(BPF_RET | BPF_K, SECCOMP_RET_ALLOW);
     // 载入系统调用号 (A 此前是 arch, 后续 JEQ 需要 nr)
     stmt(BPF_LD | BPF_W | BPF_ABS, 0);
@@ -1039,31 +1051,58 @@ inline std::vector<struct sock_filter> buildSeccompFilter(bool denyProcessCreate
         jmp(BPF_JMP | BPF_JEQ | BPF_K, nr, 0, 1);
         stmt(BPF_RET | BPF_K, action);
     };
-    rule(435, SECCOMP_RET_ERRNO | (unsigned int)ENOSYS);              // clone3
-    rule(41, SECCOMP_RET_ERRNO | (unsigned int)EAFNOSUPPORT);         // socket
+    rule(__NR_clone3, SECCOMP_RET_ERRNO | (unsigned int)ENOSYS);       // clone3
+    rule(__NR_socket, SECCOMP_RET_ERRNO | (unsigned int)EAFNOSUPPORT); // socket
     if (denyProcessCreate) {
-        rule(57, SECCOMP_RET_ERRNO | (unsigned int)EPERM);            // fork
-        rule(58, SECCOMP_RET_ERRNO | (unsigned int)EPERM);            // vfork
-        // clone(56): 读 args[0] flags, CLONE_THREAD 线程 → 放行, 否则 EPERM
-        jmp(BPF_JMP | BPF_JEQ | BPF_K, 56, 0, 3);
+#ifdef __NR_fork
+        rule(__NR_fork, SECCOMP_RET_ERRNO | (unsigned int)EPERM);      // fork
+#endif
+#ifdef __NR_vfork
+        rule(__NR_vfork, SECCOMP_RET_ERRNO | (unsigned int)EPERM);     // vfork
+#endif
+        // clone: 读 args[0] flags, CLONE_THREAD 线程 → 放行, 否则 EPERM
+        jmp(BPF_JMP | BPF_JEQ | BPF_K, __NR_clone, 0, 3);
         stmt(BPF_LD | BPF_W | BPF_ABS, 16);
         jmp(BPF_JMP | BPF_JSET | BPF_K, 0x00010000u, 1, 0);
         stmt(BPF_RET | BPF_K, SECCOMP_RET_ERRNO | (unsigned int)EPERM);
         stmt(BPF_LD | BPF_W | BPF_ABS, 0);  // A 之前是 flags → 重新载入 nr
-        rule(112, SECCOMP_RET_ERRNO | (unsigned int)EPERM);           // setsid
-        rule(109, SECCOMP_RET_ERRNO | (unsigned int)EPERM);           // setpgid
+        rule(__NR_setsid, SECCOMP_RET_ERRNO | (unsigned int)EPERM);    // setsid
+        rule(__NR_setpgid, SECCOMP_RET_ERRNO | (unsigned int)EPERM);   // setpgid
     }
     // 敌意系统调用 → SIGSYS (mount/namespace/ptrace/提权/时钟/模块/网络配置...)
-    static const unsigned killNrs[] = {
-        165, 166, 155, 167, 168, 308, 272, 161, 101, 310, 311, 246, 320,
-        175, 313, 176, 169, 164, 227, 305, 159, 170, 171, 172, 173, 103,
-        133, 259, 163, 154, 179, 134
+    static const long killNrs[] = {
+        __NR_mount, __NR_umount2, __NR_pivot_root, __NR_swapon, __NR_swapoff,
+        __NR_setns, __NR_unshare, __NR_chroot, __NR_ptrace,
+        __NR_process_vm_readv, __NR_process_vm_writev,
+        __NR_kexec_load, __NR_kexec_file_load, __NR_init_module,
+        __NR_finit_module, __NR_delete_module, __NR_reboot,
+        __NR_settimeofday, __NR_clock_settime, __NR_clock_adjtime,
+        __NR_adjtimex, __NR_sethostname, __NR_setdomainname,
+        __NR_syslog, __NR_mknodat, __NR_acct, __NR_quotactl,
+#ifdef __NR_mknod
+        __NR_mknod,
+#endif
+#ifdef __NR_iopl
+        __NR_iopl,
+#endif
+#ifdef __NR_ioperm
+        __NR_ioperm,
+#endif
+#ifdef __NR_modify_ldt
+        __NR_modify_ldt,
+#endif
+#ifdef __NR_uselib
+        __NR_uselib,
+#endif
     };
-    for (unsigned int nr : killNrs) rule(nr, SECCOMP_RET_KILL_PROCESS);
+    for (long nr : killNrs) rule((unsigned int)nr, SECCOMP_RET_KILL_PROCESS);
     // 探测型系统调用 → ENOSYS (运行时优雅回退)
-    static const unsigned nosysNrs[] = { 425, 426, 427, 321, 298, 323 };
-    for (unsigned int nr : nosysNrs) rule(nr, SECCOMP_RET_ERRNO | (unsigned int)ENOSYS);
-    rule(438, SECCOMP_RET_ERRNO | (unsigned int)EPERM);               // pidfd_getfd
+    static const long nosysNrs[] = {
+        __NR_io_uring_setup, __NR_io_uring_enter, __NR_io_uring_register,
+        __NR_bpf, __NR_perf_event_open, __NR_userfaultfd
+    };
+    for (long nr : nosysNrs) rule((unsigned int)nr, SECCOMP_RET_ERRNO | (unsigned int)ENOSYS);
+    rule(__NR_pidfd_getfd, SECCOMP_RET_ERRNO | (unsigned int)EPERM);   // pidfd_getfd
     stmt(BPF_RET | BPF_K, SECCOMP_RET_ALLOW);
     return f;
 }
@@ -1154,7 +1193,7 @@ inline int probeSandboxCaps() {
         if (writeProcFile("/proc/self/uid_map", um) &&
             writeProcFile("/proc/self/gid_map", gm))
             bits |= 1;
-#ifdef __x86_64__
+#ifdef CLIJUDGE_SECCOMP_ARCH
         if (prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) == 0) {
             std::vector<struct sock_filter> f = buildSeccompFilter(false);
             struct sock_fprog prog;
@@ -1197,7 +1236,7 @@ struct LinuxChildCtx {
 //      进程组计数, 超限即整组 SIGKILL 且 meta 信号写 PROC_LIMIT → 上层判 RE
 //      (与 TLE 区分; Windows 侧由 ActiveProcessLimit 拦在创建时, 无此分支)。
 //   6. seccomp 黑名单: mount/ptrace/... → SIGSYS; clone3/io_uring/bpf → ENOSYS;
-//      非 x86_64 架构放行 (兼容 -m32)。
+//      仅 x86_64/aarch64 启用, 其余架构放行 (兼容 -m32)。
 // io/workingDir/extraEnv/outputLimitBytes/trusted: 语义与 Windows 分支一致。
 inline SandboxResult sandbox_run(
     unsigned int timeLimitMs,
@@ -1261,13 +1300,13 @@ inline SandboxResult sandbox_run(
     // ActiveProcessLimit=1 的失败语义, 线程不受限); 其余场景父进程轮询进程组计数。
     bool denyProcessCreate = !trusted && maxProcesses == 1;
     static const int kSbxCaps = probeSandboxCaps();
-#ifdef __x86_64__
+#ifdef CLIJUDGE_SECCOMP_ARCH
     ctx.applySeccomp = !trusted && (kSbxCaps & 2);
     if (ctx.applySeccomp) ctx.filter = buildSeccompFilter(denyProcessCreate);
 #else
-    denyProcessCreate = false; // 非 x86_64 无过滤器规则 → 退回轮询计数
+    denyProcessCreate = false; // 非 x86_64/aarch64 无过滤器规则 → 退回轮询计数
 #endif
-    // B3: seccomp 不可用 (探测失败/非 x86_64) 时必须退回轮询计数 —
+    // B3: seccomp 不可用 (探测失败/非受支持架构) 时必须退回轮询计数 —
     // 否则 denyProcessCreate 挂起而过滤器没装, 进程数完全不受限。
     if (!ctx.applySeccomp) denyProcessCreate = false;
 

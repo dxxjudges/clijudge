@@ -1,8 +1,8 @@
 # CliJudge
 
-轻量级命令行在线评测系统（Windows / Linux 双平台）
+轻量级命令行在线评测系统（Windows / Linux 双平台，支持 x64 与 ARM64）
 
-预编译二进制见 [Releases](https://github.com/dxxjudges/clijudge/releases)（`clijudge.exe` / `clijudge-linux.bin`），或 `npm install -g clijudge`（Windows / Linux，安装后直接使用 `clijudge` 命令）。
+预编译二进制见 [Releases](https://github.com/dxxjudges/clijudge/releases)（`clijudge.exe` / `clijudge-linux.bin`，ARM64 版为 `clijudge-windows-arm64.exe` / `clijudge-linux-arm64.bin`），或 `npm install -g clijudge`（Windows / Linux，安装后直接使用 `clijudge` 命令，自动按架构选择二进制）。
 
 ## 功能特性
 

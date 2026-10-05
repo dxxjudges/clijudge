@@ -60,8 +60,78 @@ jobs:
           name: clijudge-linux-${{ github.ref_name }}
           path: clijudge-linux.bin
 
+  build-linux-arm64:
+    runs-on: ubuntu-24.04-arm
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build
+        run: |
+          g++ -std=c++17 -O2 -Wall -I include -o clijudge src/main.cpp
+
+      - name: Smoke test
+        run: bash tests/smoke_linux.sh
+
+      - name: Rename for release
+        run: mv clijudge clijudge-linux-arm64.bin
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: clijudge-linux-arm64-${{ github.ref_name }}
+          path: clijudge-linux-arm64.bin
+
+  build-windows-arm64:
+    runs-on: windows-11-arm
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup llvm-mingw
+        shell: bash
+        run: |
+          curl -L --retry 3 -o llvm-mingw.zip https://github.com/mstorsjo/llvm-mingw/releases/download/20260922/llvm-mingw-20260922-ucrt-aarch64.zip
+          unzip -q llvm-mingw.zip || powershell.exe -Command "Expand-Archive -Force llvm-mingw.zip ."
+          echo "$PWD/llvm-mingw-20260922-ucrt-aarch64/bin" >> "$GITHUB_PATH"
+
+      - name: Build
+        shell: bash
+        run: |
+          LLVM_BIN="$GITHUB_WORKSPACE/llvm-mingw-20260922-ucrt-aarch64/bin"
+          if (cd src && "$LLVM_BIN/llvm-rc" /fo "$GITHUB_WORKSPACE/clijudge.res" clijudge.rc) \
+             && "$LLVM_BIN/aarch64-w64-mingw32-clang++" -std=c++17 -O2 -Wall -static -I include -o clijudge.exe src/main.cpp clijudge.res -lpsapi -luserenv -lole32 -lwinhttp; then
+            echo "manifest embedded via llvm-rc"
+          else
+            echo "::warning::llvm-rc resource embed failed; building without manifest"
+            rm -f clijudge.exe
+            "$LLVM_BIN/aarch64-w64-mingw32-clang++" -std=c++17 -O2 -Wall -static -I include -o clijudge.exe src/main.cpp -lpsapi -luserenv -lole32 -lwinhttp
+          fi
+
+      - name: Run and arch check
+        shell: bash
+        run: |
+          "$PWD/llvm-mingw-20260922-ucrt-aarch64/bin/llvm-readobj" --file-headers clijudge.exe | grep -i "Machine:.*AA64"
+          ./clijudge.exe help > /dev/null
+
+      - name: Rename for release
+        shell: bash
+        run: mv clijudge.exe clijudge-windows-arm64.exe
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: clijudge-windows-arm64-${{ github.ref_name }}
+          path: clijudge-windows-arm64.exe
+
   release:
-    needs: [build-windows, build-linux]
+    needs: [build-windows, build-linux, build-windows-arm64, build-linux-arm64]
     runs-on: ubuntu-latest
     
     steps:
@@ -126,5 +196,7 @@ jobs:
           files: |
             dist/clijudge.exe
             dist/clijudge-linux.bin
+            dist/clijudge-windows-arm64.exe
+            dist/clijudge-linux-arm64.bin
           draft: false
           prerelease: false

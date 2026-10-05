@@ -29,6 +29,8 @@
     "bin/",
     "prebuilds/windows/clijudge.exe",
     "prebuilds/linux/clijudge-linux.bin",
+    "prebuilds/windows-arm64/clijudge-windows-arm64.exe",
+    "prebuilds/linux-arm64/clijudge-linux-arm64.bin",
     "LICENSE"
   ],
   "os": [

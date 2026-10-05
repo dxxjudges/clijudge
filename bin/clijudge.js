@@ -10,9 +10,20 @@ const root = path.join(__dirname, '..');
 
 let bin;
 if (process.platform === 'win32') {
-  bin = path.join(root, 'prebuilds', 'windows', 'clijudge.exe');
+  // arm64 优先原生二进制; 缺失时回退 x64 (Windows 11 ARM 可仿真运行)
+  const arm64 = path.join(root, 'prebuilds', 'windows-arm64', 'clijudge-windows-arm64.exe');
+  bin = process.arch === 'arm64' && fs.existsSync(arm64)
+    ? arm64
+    : path.join(root, 'prebuilds', 'windows', 'clijudge.exe');
 } else if (process.platform === 'linux') {
-  bin = path.join(root, 'prebuilds', 'linux', 'clijudge-linux.bin');
+  if (process.arch === 'arm64') {
+    bin = path.join(root, 'prebuilds', 'linux-arm64', 'clijudge-linux-arm64.bin');
+  } else if (process.arch === 'x64') {
+    bin = path.join(root, 'prebuilds', 'linux', 'clijudge-linux.bin');
+  } else {
+    console.error('clijudge: no prebuilt binary for linux/' + process.arch + ' (supported: x64, arm64)');
+    process.exit(1);
+  }
 } else {
   console.error('clijudge: unsupported platform "' + process.platform + '" (supported: win32, linux)');
   process.exit(1);
