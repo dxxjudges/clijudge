@@ -105,7 +105,7 @@ jobs:
         shell: bash
         run: |
           LLVM_BIN="$GITHUB_WORKSPACE/llvm-mingw-20260922-ucrt-aarch64/bin"
-          if (cd src && "$LLVM_BIN/llvm-rc" /fo "$GITHUB_WORKSPACE/clijudge.res" clijudge.rc) \
+          if (cd src && "$LLVM_BIN/llvm-rc" "/fo$GITHUB_WORKSPACE/clijudge.res" clijudge.rc) \
              && "$LLVM_BIN/aarch64-w64-mingw32-clang++" -std=c++17 -O2 -Wall -static -I include -o clijudge.exe src/main.cpp clijudge.res -lpsapi -luserenv -lole32 -lwinhttp; then
             echo "manifest embedded via llvm-rc"
           else
