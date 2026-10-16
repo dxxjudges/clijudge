@@ -16,7 +16,16 @@ if (process.platform === 'win32') {
     ? arm64
     : path.join(root, 'prebuilds', 'windows', 'clijudge.exe');
 } else if (process.platform === 'linux') {
-  if (process.arch === 'arm64') {
+  // Android (Termux 等) 与 glibc Linux 二进制不兼容, 需单独的 bionic 构建
+  const isAndroid = fs.existsSync('/system/bin/linker64') || fs.existsSync('/system/bin/linker');
+  if (isAndroid) {
+    if (process.arch === 'arm64') {
+      bin = path.join(root, 'prebuilds', 'android-arm64', 'clijudge-android-arm64.bin');
+    } else {
+      console.error('clijudge: no prebuilt binary for android/' + process.arch + ' (supported: arm64)');
+      process.exit(1);
+    }
+  } else if (process.arch === 'arm64') {
     bin = path.join(root, 'prebuilds', 'linux-arm64', 'clijudge-linux-arm64.bin');
   } else if (process.arch === 'x64') {
     bin = path.join(root, 'prebuilds', 'linux', 'clijudge-linux.bin');

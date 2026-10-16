@@ -124,8 +124,29 @@ jobs:
           name: npm-prebuild-windows-arm64
           path: clijudge-windows-arm64.exe
 
+  build-android-arm64:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build (Android NDK, bionic)
+        run: |
+          NDK="${ANDROID_NDK_ROOT:-$(ls -d /usr/local/lib/android/sdk/ndk/* | sort -V | tail -1)}"
+          test -d "$NDK" || { echo "::error::Android NDK not found"; exit 1; }
+          LLVM="$NDK/toolchains/llvm/prebuilt/linux-x86_64/bin"
+          "$LLVM/aarch64-linux-android24-clang++" -std=c++17 -O2 -Wall -static-libstdc++ -I include -o clijudge-android-arm64.bin src/main.cpp
+          "$LLVM/llvm-readobj" --file-headers clijudge-android-arm64.bin | grep -i "Machine:.*AArch64"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-prebuild-android-arm64
+          path: clijudge-android-arm64.bin
+
   publish:
-    needs: [build-windows, build-linux, build-windows-arm64, build-linux-arm64]
+    needs: [build-windows, build-linux, build-windows-arm64, build-linux-arm64, build-android-arm64]
     runs-on: ubuntu-latest
 
     steps:
@@ -156,10 +177,16 @@ jobs:
           name: npm-prebuild-linux-arm64
           path: prebuilds/linux-arm64
 
+      - name: Download Android ARM64 binary
+        uses: actions/download-artifact@v4
+        with:
+          name: npm-prebuild-android-arm64
+          path: prebuilds/android-arm64
+
       - name: Arrange prebuilds
         run: |
-          chmod +x prebuilds/linux/clijudge-linux.bin prebuilds/linux-arm64/clijudge-linux-arm64.bin
-          ls -l prebuilds/windows prebuilds/linux prebuilds/windows-arm64 prebuilds/linux-arm64
+          chmod +x prebuilds/linux/clijudge-linux.bin prebuilds/linux-arm64/clijudge-linux-arm64.bin prebuilds/android-arm64/clijudge-android-arm64.bin
+          ls -l prebuilds/windows prebuilds/linux prebuilds/windows-arm64 prebuilds/linux-arm64 prebuilds/android-arm64
 
       - name: Setup Node.js
         uses: actions/setup-node@v4

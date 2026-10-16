@@ -1216,7 +1216,7 @@ inline int probeSandboxCaps() {
 struct LinuxChildCtx {
     int level = 0;               // 2=完整命名空间 1=user+mnt 0=普通 fork
     std::string workDirReal;     // canonical 后的可写绑定路径
-    std::string tmpDir;          // canonical /tmp
+    std::string tmpDir;          // canonical 临时目录 (TMPDIR 或 /tmp)
     bool applySeccomp = false;
     std::vector<struct sock_filter> filter;
     char uidMap[64];
@@ -1227,7 +1227,7 @@ struct LinuxChildCtx {
 // 隔离手段 (对齐 Windows 分支语义):
 //   1. 命名空间阶梯: trusted=false 依次尝试 CLONE_NEWUSER|NEWNS|NEWPID|NEWNET|
 //      NEWIPC|NEWUTS → 仅 USER|NS → 普通 fork; trusted=true 直接普通 fork。
-//   2. 只读根 + 可写绑定: make-rprivate / → 绑定 workDir//tmp → 全新 /proc、
+//   2. 只读根 + 可写绑定: make-rprivate / → 绑定 workDir 与临时目录 → 全新 /proc、
 //      卸载 /sys → remount,bind,ro / (任一步失败则跳过, 文件权限兜底)。
 //   3. 网络: NEWNET 空网卡 + seccomp 拒绝 socket 双重兜底。
 //   4. 环境: 最小白名单 (buildMinEnv, 语义对齐 Windows) + extraEnv。
@@ -1293,7 +1293,10 @@ inline SandboxResult sandbox_run(
             ctx.workDirReal = std::filesystem::weakly_canonical(workingDir, ec).string();
             if (ec) ctx.workDirReal = workingDir;
         }
-        ctx.tmpDir = std::filesystem::weakly_canonical(std::string("/tmp"), ec).string();
+        // 临时目录绑定: TMPDIR 优先 (Termux 等环境无 /tmp, TMPDIR=$PREFIX/tmp)
+        const char* tmpEnv = getenv("TMPDIR");
+        ctx.tmpDir = std::filesystem::weakly_canonical(
+            std::string((tmpEnv && tmpEnv[0]) ? tmpEnv : "/tmp"), ec).string();
         if (ec) ctx.tmpDir.clear();
     }
     // 进程数控制: untrusted 且上限 1 → seccomp 直接拒绝创建进程 (对齐 Windows

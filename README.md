@@ -1,8 +1,8 @@
 # CliJudge
 
-轻量级命令行在线评测系统（Windows / Linux 双平台，支持 x64 与 ARM64）
+轻量级命令行在线评测系统（Windows / Linux 双平台，支持 x64 与 ARM64，另支持 Android Termux）
 
-预编译二进制见 [Releases](https://github.com/dxxjudges/clijudge/releases)（`clijudge.exe` / `clijudge-linux.bin`，ARM64 版为 `clijudge-windows-arm64.exe` / `clijudge-linux-arm64.bin`），或 `npm install -g clijudge`（Windows / Linux，安装后直接使用 `clijudge` 命令，自动按架构选择二进制）。
+预编译二进制见 [Releases](https://github.com/dxxjudges/clijudge/releases)（`clijudge.exe` / `clijudge-linux.bin`，ARM64 版为 `clijudge-windows-arm64.exe` / `clijudge-linux-arm64.bin`，Termux 版为 `clijudge-android-arm64.bin`），或 `npm install -g clijudge`（Windows / Linux / Termux，安装后直接使用 `clijudge` 命令，自动按架构与平台选择二进制）。
 
 ## 功能特性
 
@@ -97,6 +97,13 @@ Linux:
 g++ -std=c++17 -O2 -Wall -I include -o clijudge src/main.cpp
 ```
 
+Termux（Android，Bionic）:
+
+```bash
+pkg install clang
+clang++ -std=c++17 -O2 -Wall -I include -o clijudge src/main.cpp
+```
+
 Linux 下语言包联网下载依赖 `curl`（`displaylang` 命令）。
 
 ## 使用方法
@@ -127,9 +134,10 @@ clijudge.exe contest create "比赛标题" "2026-01-01 10:00:00" "2026-01-01 12:
 
 ## 系统要求
 
-- Windows Vista 或更高版本 / Linux（glibc）
+- Windows Vista 或更高版本 / Linux（glibc）/ Android 7+（Termux，arm64）
 - 支持C++17的编译器
-- Linux 判题运行环境需 `g++`/`gcc`（编译选手代码）
+- 判题运行环境需 `g++`/`gcc`（编译选手代码；Termux 安装 `clang` 包后自带 g++ 软链接）
+- Android 上用户命名空间可能被系统限制，沙箱自动降级为 seccomp + RLIMIT
 
 ## 许可证
 
