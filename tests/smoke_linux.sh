@@ -168,11 +168,12 @@ run problem submit "$JLID" "$W/a.jlang" --as bob
 
 # custom language: bare command (PATH resolution), script-style (no compile)
 mkdir -p "$TROOT/bin"
-cat > "$TROOT/bin/judgelang" <<'EOF'
-#!/bin/bash
+BASHBIN="$(command -v bash)"
+cat > "$TROOT/bin/judgelang" <<EOF
+#!$BASHBIN
 # usage: judgelang <src>  - reads stdin, prints a+b
 read a b
-echo $((a+b))
+echo \$((a+b))
 EOF
 chmod +x "$TROOT/bin/judgelang"
 python3 - "$CFG" <<'PYEOF'

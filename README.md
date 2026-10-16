@@ -138,6 +138,7 @@ clijudge.exe contest create "比赛标题" "2026-01-01 10:00:00" "2026-01-01 12:
 - 支持C++17的编译器
 - 判题运行环境需 `g++`/`gcc`（编译选手代码；Termux 安装 `clang` 包后自带 g++ 软链接）
 - Android 上用户命名空间可能被系统限制，沙箱自动降级为 seccomp + RLIMIT
+- Android 上沙箱会剥离 `LD_PRELOAD`（termux-exec 不生效），自定义语言脚本的 shebang 需使用 `$PREFIX` 下的绝对路径（如 `#!/data/data/com.termux/files/usr/bin/bash`）
 
 ## 许可证
 
