@@ -196,6 +196,26 @@ run problem testdata "$BGID" create "$W/in.txt" "$W/out.txt" 1000 256 50
 run problem submit "$BGID" "$W/b.bglang" --as bob
 [ $CODE -eq 0 ] && echo "$OUT" | grep -q "Status: AC"; t "bare custom-lang submit AC" $? "code=$CODE $OUT"
 
+# custom language priority: overrides built-in extension (.py -> failpy 必败, 内置优先时会 AC)
+cat > "$TROOT/bin/failpy" <<EOF
+#!$BASHBIN
+exit 1
+EOF
+chmod +x "$TROOT/bin/failpy"
+python3 - "$CFG" <<'PYEOF'
+import json,sys
+p=sys.argv[1]
+cfg=json.load(open(p))
+cfg.setdefault('judge',{})['custom_languages']={'failpy':{'extensions':['.py'],'compile':'','run':'failpy {src}'}}
+json.dump(cfg,open(p,'w'))
+PYEOF
+cat > "$W/c.py" <<'EOF'
+a,b=map(int,input().split())
+print(a+b)
+EOF
+run problem submit "$BGID" "$W/c.py" --as carol
+[ $CODE -ne 0 ] && ! echo "$OUT" | grep -q "Status: AC"; t "custom .py overrides builtin" $? "code=$CODE $OUT"
+
 # non-ASCII argv/path: Chinese title roundtrip + Chinese zip export
 run problem create "中文标题测试"
 ZID=$(echo "$OUT" | sed -n 's/.*Problem created with ID: \([0-9]*\).*/\1/p' | head -1)

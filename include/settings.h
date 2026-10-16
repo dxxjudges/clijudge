@@ -23,6 +23,7 @@
 //     }
 //   }
 // custom_languages 键缺失时自动内置 judgelang 示例语言;
+// 自定义语言优先级高于内置: 注册与内置相同扩展名 (如 .py/.cpp) 时覆盖内置处理;
 // compile 为空 = 脚本语言, 模板占位符 {src}/{exe}/{dir}, 见 CustomLanguage 注释。
 
 #include <string>
@@ -50,7 +51,7 @@ inline std::string configPath() {
 }
 
 // ── 自定义评测语言 ─────────────────────────────────────────
-// 按扩展名注册内置语言之外的可评测语言 (config.json judge.custom_languages)
+// 按扩展名注册可评测语言 (config.json judge.custom_languages); 优先级高于内置
 // 模板占位符:
 //   {src} - 选手源文件绝对路径 (多个源文件时独立成参)
 //   {exe} - 编译产物路径 (<workDir>/program<exeSuffix>)

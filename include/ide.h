@@ -30,10 +30,11 @@ namespace ide {
 namespace fs = std::filesystem;
 
 // 由 judge::compileSources 处理的语言扩展（其余扩展名尝试直接执行）
+// 自定义语言优先, 可覆盖内置扩展名
 inline bool isKnownLanguage(const std::string& ext) {
-    return ext == ".py" || ext == ".js" || ext == ".cpp" || ext == ".cc"
-        || ext == ".cxx" || ext == ".c" || ext == ".java"
-        || clijudge::settings::findByExtension(ext) != nullptr;
+    return clijudge::settings::findByExtension(ext) != nullptr
+        || ext == ".py" || ext == ".js" || ext == ".cpp" || ext == ".cc"
+        || ext == ".cxx" || ext == ".c" || ext == ".java";
 }
 
 // 创建临时工作目录

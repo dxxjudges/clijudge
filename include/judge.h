@@ -463,14 +463,14 @@ struct CompileResult {
     std::string language;
 };
 
-// 获取语言名称 (内置语言优先, 其余按注册的自定义语言)
+// 获取语言名称 (自定义语言优先, 其余为内置)
 inline std::string getLanguageName(const std::string& ext) {
+    if (const auto* cl = settings::findByExtension(ext)) return cl->name;
     if (ext == ".cpp" || ext == ".cc" || ext == ".cxx") return "C++";
     if (ext == ".c") return "C";
     if (ext == ".py") return "Python";
     if (ext == ".java") return "Java";
     if (ext == ".js") return "JavaScript";
-    if (const auto* cl = settings::findByExtension(ext)) return cl->name;
     return "Unknown";
 }
 
@@ -652,6 +652,11 @@ inline CompileResult compileSources(const std::vector<std::string>& sources,
 
     fs::create_directories(workDir);
 
+    // 自定义语言优先于内置 (可覆盖 .py/.cpp/.java 等内置扩展名)
+    if (const auto* cl = settings::findByExtension(ext)) {
+        return compileCustomLanguage(*cl, sources, workDir, exeName);
+    }
+
     // 脚本语言不需要编译
     if (ext == ".py" || ext == ".js") {
 #ifdef _WIN32
@@ -690,8 +695,6 @@ inline CompileResult compileSources(const std::vector<std::string>& sources,
         argv.push_back("-d");
         argv.push_back(fs::absolute(workDir).string());
         for (const auto& s : sources) argv.push_back(fs::absolute(s).string());
-    } else if (const auto* cl = settings::findByExtension(ext)) {
-        return compileCustomLanguage(*cl, sources, workDir, exeName);
     } else {
         result.error = "Unsupported language: " + ext;
         return result;
