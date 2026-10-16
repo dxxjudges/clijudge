@@ -179,6 +179,7 @@ jobs:
             [ -e "$PREFIX/bin/g++" ] || ln -s clang++ "$PREFIX/bin/g++"
             [ -e "$PREFIX/bin/gcc" ] || ln -s clang "$PREFIX/bin/gcc"
             [ -e "$PREFIX/bin/python3" ] || ln -s python "$PREFIX/bin/python3"
+            export CLIJUDGE_DATA_DIR="$HOME/data"
             ./clijudge-android-arm64.bin help > /dev/null
             CIJUDGE_BIN=/repo/clijudge-android-arm64.bin bash tests/smoke_linux.sh
           '
