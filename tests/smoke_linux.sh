@@ -2,9 +2,10 @@
 # CliJudge Linux smoke - report fixes + ide de-shell + custom language
 set -u
 BIN="${CIJUDGE_BIN:-$(cd "$(dirname "$0")/.." && pwd)/clijudge}"
-export CLIJUDGE_DATA_DIR=/tmp/cj_lx_smoke/data
-W=/tmp/cj_lx_smoke/work
-rm -rf /tmp/cj_lx_smoke
+TROOT="${TMPDIR:-/tmp}/cj_lx_smoke"
+export CLIJUDGE_DATA_DIR="$TROOT/data"
+W="$TROOT/work"
+rm -rf "$TROOT"
 mkdir -p "$CLIJUDGE_DATA_DIR" "$W"
 pass=0; fail=0
 t() { # t <name> <0=pass> [detail]
