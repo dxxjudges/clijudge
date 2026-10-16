@@ -14,7 +14,7 @@ t() { # t <name> <0=pass> [detail]
 run() { OUT=$("$BIN" "$@" 2>&1); CODE=$?; }
 
 # environment probes (diagnose CI vs local sandbox behavior)
-export CLIJUDGE_SANDBOX_DEBUG=/tmp/cj_lx_smoke/sbx.dbg
+export CLIJUDGE_SANDBOX_DEBUG="$TROOT/sbx.dbg"
 echo "ENV: uname=$(uname -r)"
 echo "ENV: apparmor_restrict_unprivileged_userns=$(cat /proc/sys/kernel/apparmor_restrict_unprivileged_userns 2>/dev/null || echo n/a)"
 echo "ENV: max_user_namespaces=$(cat /proc/sys/user/max_user_namespaces 2>/dev/null || echo n/a)"
@@ -167,14 +167,14 @@ run problem submit "$JLID" "$W/a.jlang" --as bob
 [ $CODE -eq 0 ] && echo "$OUT" | grep -q "Status: AC"; t "jl submit AC" $? "code=$CODE $OUT"
 
 # custom language: bare command (PATH resolution), script-style (no compile)
-mkdir -p /tmp/cj_lx_smoke/bin
-cat > /tmp/cj_lx_smoke/bin/judgelang <<'EOF'
+mkdir -p "$TROOT/bin"
+cat > "$TROOT/bin/judgelang" <<'EOF'
 #!/bin/bash
 # usage: judgelang <src>  - reads stdin, prints a+b
 read a b
 echo $((a+b))
 EOF
-chmod +x /tmp/cj_lx_smoke/bin/judgelang
+chmod +x "$TROOT/bin/judgelang"
 python3 - "$CFG" <<'PYEOF'
 import json,sys
 p=sys.argv[1]
@@ -182,7 +182,7 @@ cfg=json.load(open(p))
 cfg.setdefault('judge',{})['custom_languages']={'bare':{'extensions':['.bglang'],'compile':'','run':'judgelang {src}'}}
 json.dump(cfg,open(p,'w'))
 PYEOF
-export PATH=/tmp/cj_lx_smoke/bin:$PATH
+export PATH="$TROOT/bin:$PATH"
 cat > "$W/b.bglang" <<'EOF'
 dummy source resolved by judgelang shim
 EOF
@@ -297,5 +297,5 @@ if [ -s "$CLIJUDGE_SANDBOX_DEBUG" ]; then
   echo "--- sandbox debug log ---"
   sort -u "$CLIJUDGE_SANDBOX_DEBUG" | head -40
 fi
-rm -rf /tmp/cj_lx_smoke
+rm -rf "$TROOT"
 [ $fail -eq 0 ] && exit 0 || exit 1
