@@ -155,7 +155,8 @@ jobs:
 
   termux-smoke:
     needs: [build-android-arm64]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 30
 
     steps:
       - name: Checkout
@@ -171,12 +172,13 @@ jobs:
       - name: Build toolchain and smoke inside Termux container
         run: |
           chmod +x clijudge-android-arm64.bin
-          docker run --rm -v "$GITHUB_WORKSPACE:/repo" -w /repo termux/termux:latest bash -c '
+          docker run --rm -v "$GITHUB_WORKSPACE:/repo" -w /repo termux/termux-docker:latest bash -c '
             set -e
-            pkg update -y || true
-            pkg install -y clang python
+            apt update
+            apt install -yq clang python
             [ -e "$PREFIX/bin/g++" ] || ln -s clang++ "$PREFIX/bin/g++"
             [ -e "$PREFIX/bin/gcc" ] || ln -s clang "$PREFIX/bin/gcc"
+            [ -e "$PREFIX/bin/python3" ] || ln -s python "$PREFIX/bin/python3"
             ./clijudge-android-arm64.bin help > /dev/null
             CIJUDGE_BIN=/repo/clijudge-android-arm64.bin bash tests/smoke_linux.sh
           '
