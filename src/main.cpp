@@ -169,6 +169,15 @@ int parseInt(const char* str, int defaultValue = 0) {
     }
 }
 
+// 解析浮点参数 (非法输入回退默认值, 避免 std::stod 抛出未捕获异常导致崩溃)
+double parseDouble(const char* str, double defaultValue = 0.0) {
+    try {
+        return std::stod(str);
+    } catch (...) {
+        return defaultValue;
+    }
+}
+
 // 判断是否为修改类命令（需要持有跨进程数据锁）。
 // 读命令不加锁：索引/配置均为原子替换写入，读到的总是完整快照。
 bool isMutationCommand(const std::string& command, int argc, char* argv[]) {
@@ -498,9 +507,9 @@ int main(int argc, char* argv[]) {
                 } else if (strcmp(argv[i], "-spj-exe") == 0 && i + 1 < argc) {
                     spjExe = argv[++i];
                 } else if (strcmp(argv[i], "-float-abs") == 0 && i + 1 < argc) {
-                    floatAbsTol = std::stod(argv[++i]);
+                    floatAbsTol = parseDouble(argv[++i]);
                 } else if (strcmp(argv[i], "-float-rel") == 0 && i + 1 < argc) {
-                    floatRelTol = std::stod(argv[++i]);
+                    floatRelTol = parseDouble(argv[++i]);
                 } else if (strcmp(argv[i], "-type") == 0 && i + 1 < argc) {
                     problemType = argv[++i];
                 } else if (strcmp(argv[i], "-subtask-mode") == 0 && i + 1 < argc) {
@@ -572,9 +581,9 @@ int main(int argc, char* argv[]) {
                 } else if (strcmp(argv[i], "-spj-exe") == 0 && i + 1 < argc) {
                     spjExe = argv[++i];
                 } else if (strcmp(argv[i], "-float-abs") == 0 && i + 1 < argc) {
-                    floatAbsTol = std::stod(argv[++i]);
+                    floatAbsTol = parseDouble(argv[++i]);
                 } else if (strcmp(argv[i], "-float-rel") == 0 && i + 1 < argc) {
-                    floatRelTol = std::stod(argv[++i]);
+                    floatRelTol = parseDouble(argv[++i]);
                 } else if (strcmp(argv[i], "-type") == 0 && i + 1 < argc) {
                     problemType = argv[++i];
                 } else if (strcmp(argv[i], "-subtask-mode") == 0 && i + 1 < argc) {

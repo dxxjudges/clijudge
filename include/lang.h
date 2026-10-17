@@ -447,11 +447,14 @@ inline std::string httpGet(const std::string& url) {
         path = "/";
     }
     
-    // 检查是否有端口号
+    // 检查是否有端口号 (端口非法时保持默认端口, 避免 std::stoi 抛出导致崩溃)
     size_t colonPos = host.find(':');
     if (colonPos != std::string::npos) {
-        port = std::stoi(host.substr(colonPos + 1));
-        host = host.substr(0, colonPos);
+        try {
+            port = std::stoi(host.substr(colonPos + 1));
+            host = host.substr(0, colonPos);
+        } catch (...) {
+        }
     }
     
     // 转换为宽字符

@@ -203,10 +203,14 @@ public:
         if (fs::exists(problemPath)) {
             std::ifstream pf(problemPath);
             if (pf.is_open()) {
-                pf >> problemData;
+                try {
+                    pf >> problemData;
+                } catch (...) {
+                    problemData = json();
+                }
             }
         }
-        
+
         // 评判
         std::string result = "pending";
         int score = 0;
@@ -250,14 +254,17 @@ public:
         if (fs::exists(submissionPath)) {
             std::ifstream f(submissionPath);
             if (f.is_open()) {
-                f >> submissions;
+                try {
+                    f >> submissions;
+                } catch (...) {
+                    submissions = json::array();
+                }
             }
         }
         submissions.push_back(submission);
 
-        std::ofstream f(submissionPath);
-        if (f.is_open()) {
-            f << submissions.dump(2);
+        if (!platform::writeFileAtomic(submissionPath, submissions.dump(2))) {
+            return false;
         }
 
         return true;
@@ -271,9 +278,13 @@ public:
         if (fs::exists(submissionPath)) {
             std::ifstream f(submissionPath);
             if (f.is_open()) {
-                json submissions;
-                f >> submissions;
-                return submissions;
+                try {
+                    json submissions;
+                    f >> submissions;
+                    return submissions;
+                } catch (...) {
+                    return json::array();
+                }
             }
         }
         return json::array();
