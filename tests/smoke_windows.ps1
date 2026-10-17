@@ -35,11 +35,11 @@ Check "problem create" ($r.out -match "Problem created with ID: 1") $r.out
 
 # T02b 'problem create help' prints usage instead of creating a problem
 $r = Run @("problem", "create", "help")
-Check "create help usage" (($r.code -eq 1) -and ($r.out -match "Usage: clijudge.exe problem create")) "code=$($r.code) out=$($r.out)"
+Check "create help usage" (($r.code -eq 1) -and ($r.out -match "Usage: clijudge problem create")) "code=$($r.code) out=$($r.out)"
 $r = Run @("article", "create", "help")
-Check "article create help usage" (($r.code -eq 1) -and ($r.out -match "Usage: clijudge.exe article create")) "code=$($r.code) out=$($r.out)"
+Check "article create help usage" (($r.code -eq 1) -and ($r.out -match "Usage: clijudge article create")) "code=$($r.code) out=$($r.out)"
 $r = Run @("contest", "create", "help", "2026-01-01 10:00:00", "2026-01-02 10:00:00", "1")
-Check "contest create help usage" (($r.code -eq 1) -and ($r.out -match "Usage: clijudge.exe contest create")) "code=$($r.code) out=$($r.out)"
+Check "contest create help usage" (($r.code -eq 1) -and ($r.out -match "Usage: clijudge contest create")) "code=$($r.code) out=$($r.out)"
 
 # T03 testdata (LF files, byte-exact compare)
 W "$work\in.txt" "1 2`n"
@@ -117,9 +117,9 @@ Check "contest export EN" ($r.out -match "Contest exported to:") $r.out
 
 # T13 usage errors EN
 $r = Run @("contest", "import")
-Check "contest import usage EN" (($r.code -eq 1) -and ($r.out -match "Usage: clijudge\.exe contest import \[cdf_path\]")) $r.out
+Check "contest import usage EN" (($r.code -eq 1) -and ($r.out -match "Usage: clijudge contest import \[cdf_path\]")) $r.out
 $r = Run @("contest", "export", "1")
-Check "contest export usage EN" (($r.code -eq 1) -and ($r.out -match "Usage: clijudge\.exe contest export \[id\] \[cdf_path\]")) $r.out
+Check "contest export usage EN" (($r.code -eq 1) -and ($r.out -match "Usage: clijudge contest export \[id\] \[cdf_path\]")) $r.out
 
 # T14 contest import roundtrip (EN outputs, no warning for plain problem)
 $r = Run @("contest", "import", "$work\c.cdf")

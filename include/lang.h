@@ -182,7 +182,7 @@ inline const std::string& builtinEnJson() {
   "strings": {
     "help": {
       "title": "CliJudge - Lightweight Command-Line Judge System",
-      "usage": "Usage: clijudge.exe <command> [arguments...]",
+      "usage": "Usage: clijudge <command> [arguments...]",
       "commands": "Commands:",
       "article": "Article management",
       "contest": "Contest management",
@@ -190,7 +190,7 @@ inline const std::string& builtinEnJson() {
       "problem": "Problem management",
       "submit": "Submission management",
       "displaylang": "Display language settings",
-      "more_info": "Use 'clijudge.exe <command> help' for more information about a command."
+      "more_info": "Use 'clijudge <command> help' for more information about a command."
     },
     "article": {
       "commands": "Article Commands:",
