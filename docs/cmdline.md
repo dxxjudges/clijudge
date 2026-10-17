@@ -133,7 +133,7 @@ data/
 
 ### 显示语言
 
-语言包为 `data/langs/<名称>.cjl`（JSON），当前语言记录在 `config.json` 的 `current_lang`。首次运行自动配置内置英文包（离线可用）；若当前语言文件缺失，除 `help` / `displaylang` 外所有命令报错并提示 `clijudge displaylang switch [langname]`。联网下载在 Linux 下依赖 `curl`。
+语言包为 `data/langs/<名称>.cjl`（JSON），当前语言记录在 `config.json` 的 `current_lang`。首次运行自动配置内置英文包（离线可用）；若当前语言文件缺失，除 `help` / `displaylang` 外所有命令报错并提示 `clijudge displaylang switch [langname]`。联网下载在 Linux / Android 下由内置 HTTP(S) 客户端完成，无需外部命令。
 
 ---
 

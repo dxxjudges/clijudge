@@ -104,7 +104,7 @@ pkg install clang
 clang++ -std=c++17 -O2 -Wall -I include -o clijudge src/main.cpp
 ```
 
-Linux 下语言包联网下载依赖 `curl`（`displaylang` 命令）。
+Linux / Android 下语言包联网下载由内置 HTTP(S) 客户端完成，无需 `curl` 等外部命令（`displaylang` 命令）。
 
 ## 使用方法
 

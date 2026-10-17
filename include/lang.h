@@ -30,6 +30,7 @@
 #endif
 #include "json.hpp"
 #include "platform.h"
+#include "http_client.hpp"
 
 namespace clijudge {
 namespace lang {
@@ -513,7 +514,7 @@ inline std::string httpGet(const std::string& url) {
         return "";
     }
 
-    // 校验 HTTP 状态码: 否则 404 的响应体会被当成语言包/列表内容保存 (Linux 侧 curl -f 同语义)
+    // 校验 HTTP 状态码: 否则 404 的响应体会被当成语言包/列表内容保存
     DWORD statusCode = 0, statusSize = sizeof(statusCode);
     if (!WinHttpQueryHeaders(hRequest,
                              WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
@@ -543,24 +544,11 @@ inline std::string httpGet(const std::string& url) {
     return response;
 }
 #else
-// Linux: 通过 curl 获取（curl 在各发行版上均为常见基础组件）
+// Linux/Android: 自包含 HTTP(S) 客户端, 不再依赖外部命令 (见 http_client.hpp)
 inline std::string httpGet(const std::string& url) {
-    // URL 将拼入 shell 命令，先做白名单校验（防止注入）
-    for (char c : url) {
-        bool ok = (unsigned char)c < 0x80 &&
-                  (isalnum((unsigned char)c) || std::strchr(":/._-~?&=%+@,", c) != nullptr);
-        if (!ok) return "";
-    }
-    std::string cmd = "curl -fsSL --max-time 30 '" + url + "'";
-    FILE* p = popen(cmd.c_str(), "r");
-    if (!p) return "";
-    std::string out;
-    char buf[4096];
-    size_t n;
-    while ((n = fread(buf, 1, sizeof(buf), p)) > 0) out.append(buf, n);
-    int rc = pclose(p);
-    if (rc != 0) return "";
-    return out;
+    if (url.compare(0, 7, "http://") != 0 && url.compare(0, 8, "https://") != 0)
+        return "";
+    return clijudge::http::get(url);
 }
 #endif
 
