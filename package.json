@@ -1,6 +1,6 @@
 {
   "name": "clijudge",
-  "version": "1.1.6",
+  "version": "1.1.7",
   "description": "CliJudge - lightweight command-line local judge: single binary, Windows/Linux sandboxed judging, LemonLime CDF, JSON storage",
   "keywords": [
     "judge",
