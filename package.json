@@ -36,7 +36,8 @@
   ],
   "os": [
     "win32",
-    "linux"
+    "linux",
+    "android"
   ],
   "engines": {
     "node": ">=14"

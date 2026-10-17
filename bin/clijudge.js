@@ -15,9 +15,11 @@ if (process.platform === 'win32') {
   bin = process.arch === 'arm64' && fs.existsSync(arm64)
     ? arm64
     : path.join(root, 'prebuilds', 'windows', 'clijudge.exe');
-} else if (process.platform === 'linux') {
-  // Android (Termux 等) 与 glibc Linux 二进制不兼容, 需单独的 bionic 构建
-  const isAndroid = fs.existsSync('/system/bin/linker64') || fs.existsSync('/system/bin/linker');
+} else if (process.platform === 'linux' || process.platform === 'android') {
+  // Android (Termux 等) 与 glibc Linux 二进制不兼容, 需单独的 bionic 构建;
+  // Termux 下 Node 上报 process.platform === 'android', 故两种平台都走这里
+  const isAndroid = process.platform === 'android'
+    || fs.existsSync('/system/bin/linker64') || fs.existsSync('/system/bin/linker');
   if (isAndroid) {
     if (process.arch === 'arm64') {
       bin = path.join(root, 'prebuilds', 'android-arm64', 'clijudge-android-arm64.bin');
@@ -34,7 +36,7 @@ if (process.platform === 'win32') {
     process.exit(1);
   }
 } else {
-  console.error('clijudge: unsupported platform "' + process.platform + '" (supported: win32, linux)');
+  console.error('clijudge: unsupported platform "' + process.platform + '" (supported: win32, linux, android)');
   process.exit(1);
 }
 
