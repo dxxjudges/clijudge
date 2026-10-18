@@ -18,7 +18,7 @@ jobs:
           fetch-depth: 0
       
       - name: Setup MinGW (MSVCRT toolchain for Windows Vista)
-        uses: bwoodsend/setup-winlibs@v1
+        uses: bwoodsend/setup-winlibs-action@v1
         with:
           runtime: msvcrt
           threads: posix
@@ -30,7 +30,7 @@ jobs:
           windres src/clijudge.rc -O coff -o clijudge_res.o
           g++ -std=c++17 -O2 -Wall -static -I include -o clijudge.exe src/main.cpp clijudge_res.o -lpsapi -luserenv -lole32 -lwinhttp
 
-      - name: Verify CRT (MSVCRT, no UCRT — for Vista)
+      - name: Verify CRT (MSVCRT, no UCRT, for Vista)
         shell: bash
         run: |
           objdump -p clijudge.exe | grep -i 'DLL Name'
