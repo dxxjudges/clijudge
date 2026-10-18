@@ -91,6 +91,8 @@ windres src/clijudge.rc -O coff -o clijudge_res.o
 g++ -std=c++17 -O2 -Wall -static -I include -o clijudge.exe src/main.cpp clijudge_res.o -lpsapi -luserenv -lole32 -lwinhttp
 ```
 
+> **Windows Vista 兼容**：`-static` 必须保留，否则运行时会缺少 `libgcc_s_seh-1.dll` / `libstdc++-6.dll` / `libwinpthread-1.dll`。此外 Vista 不含 **UCRT**（`ucrtbase.dll`），需使用 **MSVCRT** 版工具链（winlibs `*-msvcrt` 或 MSYS2 的 MINGW64）；UCRT 版工具链（winlibs UCRT64、MSYS2 UCRT64）产出的 exe 仅支持 Windows 10+。
+
 Linux:
 
 ```bash

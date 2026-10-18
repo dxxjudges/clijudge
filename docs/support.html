@@ -223,6 +223,7 @@ cmake --build .</code></pre>
   -o clijudge.exe src/main.cpp \
   -lpsapi -luserenv -lole32 -lwinhttp</code></pre>
         </div>
+        <p style="margin-top: 12px;"><strong>Windows Vista 兼容</strong>：必须保留 <code>-static</code>，否则会缺少 <code>libgcc_s_seh-1.dll</code> 等运行库；且 Vista 不含 UCRT，需用 MSVCRT 版工具链（winlibs <code>*-msvcrt</code> 或 MSYS2 的 MINGW64），UCRT 版工具链产出的 exe 仅支持 Windows 10+。</p>
         <p style="margin-top: 12px;">Linux 下无平台链接参数：</p>
         <div class="code-block" style="margin-top: 12px;">
           <div class="bar"><i></i><i></i><i></i></div>
