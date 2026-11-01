@@ -1,0 +1,5 @@
+# CliJudge 镜像站黑名单
+# 每行一个镜像前缀（可省略 https://），支持 # 注释
+# 已知不可用 / 不可信的镜像在此列出，页面会自动跳过
+https://gh-proxy.net
+https://ghproxy.monkeyray.net

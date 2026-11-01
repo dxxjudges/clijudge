@@ -43,6 +43,24 @@
   }
   pre code { background: transparent; border: 0; padding: 0; }
 
+  /* Download / mirror panel */
+  .dl-panel {
+    background: var(--card); border: 1px solid var(--card-border);
+    border-radius: var(--radius); padding: 26px; text-align: center;
+  }
+  .dl-panel .device { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px; color: var(--text-dim); }
+  .dl-panel .device b { color: var(--text); }
+  .dl-panel .device .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 10px var(--green); }
+  .dl-panel .actions { margin-top: 16px; display: flex; gap: 12px; justify-content: center; align-items: center; flex-wrap: wrap; }
+  .dl-panel select {
+    background: var(--bg-soft); color: var(--text); border: 1px solid var(--card-border);
+    border-radius: 10px; padding: 10px 12px; font-size: 14px; font-family: inherit; cursor: pointer;
+  }
+  .dl-panel select:focus { outline: none; border-color: var(--accent); }
+  .dl-panel .mirror-links { margin-top: 14px; font-size: 13px; color: var(--text-faint); }
+  .dl-panel .mirror-links a { color: var(--accent-2); word-break: break-all; }
+  .dl-panel .note { margin-top: 10px; font-size: 12.5px; color: var(--text-faint); }
+
   .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 24px; }
 
   /* ── Nav ─────────────────────────────── */
@@ -199,6 +217,32 @@
   </div>
 </header>
 
+<section id="download">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="tag">Download</span>
+      <h2>下载适合你设备的版本</h2>
+      <p>自动识别当前设备并推荐对应版本，镜像线路按实测延迟排序。</p>
+    </div>
+    <div class="dl-panel reveal">
+      <div class="device"><span class="dot"></span>检测到 <b id="detectedDevice">正在识别设备…</b></div>
+      <div class="actions">
+        <a class="btn btn-primary" id="recoDownloadBtn" href="https://github.com/dxxjudges/clijudge/releases/latest/download/clijudge.exe" target="_blank" rel="noopener">下载适合本机版本</a>
+        <select id="assetSelect" aria-label="选择平台版本">
+          <option value="windows-x64">Windows x64 (.exe)</option>
+          <option value="windows-arm64">Windows ARM64 (.exe)</option>
+          <option value="linux-x64">Linux x64 (.bin)</option>
+          <option value="linux-arm64">Linux ARM64 (.bin)</option>
+          <option value="android-arm64">Android ARM64 (Termux)</option>
+          <option value="all">查看全部版本</option>
+        </select>
+      </div>
+      <div class="mirror-links">镜像线路（按实测延迟排序）：<span id="mirrorLinks"><a href="https://ghproxy.net/https://github.com/dxxjudges/clijudge/releases/latest/download/clijudge.exe" target="_blank" rel="noopener">ghproxy.net（默认）</a></span></div>
+      <div class="note" id="deviceNote">正在测速选择镜像线路…</div>
+    </div>
+  </div>
+</section>
+
 <section>
   <div class="wrap">
     <div class="sec-head reveal">
@@ -208,7 +252,7 @@
     <div class="grid g2 reveal">
       <div class="card">
         <h3>如何编译 CliJudge？</h3>
-        <p>推荐 <code>npm install -g clijudge</code> 一键安装（需 Node.js ≥ 14，含双平台预编译二进制）；或在 <a href="https://github.com/dxxjudges/clijudge/releases" target="_blank" rel="noopener" style="color: var(--accent-2);">Releases</a> 下载预编译二进制（<code>clijudge.exe</code> / <code>clijudge-linux.bin</code>）。需要自行编译时，使用 CMake：</p>
+        <p>推荐 <code>npm install -g clijudge</code> 一键安装（需 Node.js ≥ 14，含双平台预编译二进制）；或在 <a href="https://github.com/dxxjudges/clijudge/releases/latest" target="_blank" rel="noopener" style="color: var(--accent-2);">Releases</a> 下载预编译二进制（<code>clijudge.exe</code> / <code>clijudge-linux.bin</code>）。需要自行编译时，使用 CMake：</p>
         <div class="code-block" style="margin-top: 12px;">
           <div class="bar"><i></i><i></i><i></i></div>
           <pre><code>mkdir build
@@ -340,7 +384,7 @@ clijudge.exe problem import problem_1.json</code></pre>
     <p style="margin-top: 12px;">Windows / Linux 双平台命令行评测系统 · 开源 · MIT License</p>
     <p style="margin-top: 8px; display: flex; gap: 24px; justify-content: center; flex-wrap: wrap;">
       <a href="https://github.com/dxxjudges/clijudge" target="_blank" rel="noopener" style="color: var(--accent-2);">GitHub</a>
-      <a href="https://github.com/dxxjudges/clijudge/releases" target="_blank" rel="noopener" style="color: var(--accent-2);">下载</a>
+      <a href="https://github.com/dxxjudges/clijudge/releases/latest" target="_blank" rel="noopener" style="color: var(--accent-2);">下载</a>
       <a href="support.html" style="color: var(--accent-2);">支持中心</a>
     </p>
     <p style="margin-top: 16px; font-size: 12px; color: var(--text-faint);">© 2026 CliJudge. All rights reserved.</p>
@@ -378,6 +422,220 @@ clijudge.exe problem import problem_1.json</code></pre>
       toggle.textContent = '☰';
     });
   });
+})();
+
+// ── 设备识别 / 推荐下载 / 智能镜像选择 ───────────────────────────
+(function () {
+  var GH_BASE = 'https://github.com/dxxjudges/clijudge/releases/latest/download/';
+  var RELEASES_PAGE = 'https://github.com/dxxjudges/clijudge/releases/latest';
+  var ASSETS = {
+    'windows-x64':   { file: 'clijudge.exe',               label: 'Windows x64',   note: '适用于 Windows Vista 及以上（x64），下载后直接运行。' },
+    'windows-arm64': { file: 'clijudge-windows-arm64.exe', label: 'Windows ARM64', note: '适用于 Windows on ARM（ARM64），下载后直接运行。' },
+    'linux-x64':     { file: 'clijudge-linux.bin',         label: 'Linux x64',     note: '适用于 glibc x64；下载后 mv clijudge-linux.bin clijudge && chmod +x clijudge。' },
+    'linux-arm64':   { file: 'clijudge-linux-arm64.bin',   label: 'Linux ARM64',   note: '适用于 glibc ARM64；下载后 mv clijudge-linux-arm64.bin clijudge && chmod +x clijudge。' },
+    'android-arm64': { file: 'clijudge-android-arm64.bin', label: 'Android ARM64', note: '适用于 Android Termux（arm64）；下载后 chmod +x 运行。' }
+  };
+  var DEFAULT_PREFIX = 'https://ghproxy.net';
+  var CANDIDATES = [
+    'https://ghproxy.net', 'https://gh.llkk.cc', 'https://tvv.tw', 'https://gh-proxy.com',
+    'https://fastgit.cc', 'https://git.yylx.win', 'https://g.blfrp.cn', 'https://gh-proxy.net',
+    'https://ghproxy.monkeyray.net'
+  ];
+  var BLOCKLIST = ['https://gitproxy.click'];
+
+  var state = { key: 'all', note: '', override: false, mirrors: [], probing: true };
+
+  function $(id) { return document.getElementById(id); }
+
+  function detect() {
+    var ua = navigator.userAgent || '';
+    var plat = navigator.platform || '';
+    var isAndroid = /Android/i.test(ua);
+    var isIOS = /iPhone|iPad|iPod/i.test(ua);
+    var isWindows = /Windows|Win32|Win64|WinCE/i.test(ua) || /^Win/i.test(plat);
+    var isMac = /Macintosh|Mac OS X/i.test(ua) || /^Mac/i.test(plat);
+    var isLinux = !isAndroid && !isIOS && (/Linux|X11/i.test(ua) || /Linux/i.test(plat));
+    var isArm = /aarch64|arm64|armv8|armv7|armhf|armel/i.test(ua) || /arm|aarch64/i.test(plat);
+    if (isIOS) return { key: 'all', note: 'iOS / iPadOS 暂无预编译版本，请查看全部 Release 或从源码编译。' };
+    if (isAndroid) return { key: 'android-arm64', note: '' };
+    if (isWindows) return { key: isArm ? 'windows-arm64' : 'windows-x64', note: '' };
+    if (isLinux) return { key: isArm ? 'linux-arm64' : 'linux-x64', note: '' };
+    if (isMac) return { key: 'all', note: 'macOS 暂无预编译版本，请查看全部 Release 或从源码编译。' };
+    return { key: 'all', note: '未能识别当前系统，请手动选择对应平台版本。' };
+  }
+
+  function officialUrl(file) { return GH_BASE + file; }
+
+  function mirrorUrl(prefix, file) {
+    return prefix.replace(/\/+$/, '') + '/' + GH_BASE + file;
+  }
+
+  function nameOf(prefix) { return prefix.replace(/^https:\/\//, ''); }
+
+  // 只接受 https://host/https://原始地址 的规范镜像 URL
+  var MIRROR_RE = /^https:\/\/[A-Za-z0-9.-]+(?::\d{2,5})?\/https:\/\/[^\s'"<>\\]+$/;
+  function validMirror(u) { return typeof u === 'string' && MIRROR_RE.test(u); }
+
+  function renderMirrors() {
+    var asset = ASSETS[state.key] || null;
+    var file = asset ? asset.file : null;
+    var list = $('mirrorLinks');
+    if (list) {
+      list.textContent = '';
+      var entries = [];
+      if (file) {
+        entries.push({ name: 'GitHub 官方', url: officialUrl(file), latency: null });
+        state.mirrors.forEach(function (m) {
+          entries.push({ name: m.name, url: mirrorUrl(m.prefix, file), latency: m.latency });
+        });
+      }
+      entries = entries.filter(function (e) { return validMirror(e.url); });
+      if (entries.length) {
+        entries.forEach(function (e, i) {
+          var a = document.createElement('a');
+          a.href = e.url;
+          a.target = '_blank';
+          a.rel = 'noopener';
+          a.textContent = e.name + (e.latency != null ? ' (' + e.latency + 'ms)' : '');
+          list.appendChild(a);
+          if (i < entries.length - 1) list.appendChild(document.createTextNode(' · '));
+        });
+      } else {
+        list.textContent = '暂无可用线路，请前往 Releases 下载。';
+      }
+    }
+
+    var btn = $('heroMirrorBtn');
+    var meta = $('heroMirrorMeta');
+    if (!btn) return;
+    if (!file) {
+      btn.href = RELEASES_PAGE;
+      btn.title = '当前系统暂无预编译版本，前往 Releases 选择';
+      if (meta) meta.textContent = ' · 全部版本';
+      return;
+    }
+    var best = state.mirrors[0];
+    if (best) {
+      btn.href = mirrorUrl(best.prefix, file);
+      btn.title = '最快镜像: ' + best.name + (best.latency != null ? ' (' + best.latency + 'ms)' : '');
+      if (meta) meta.textContent = ' · ' + best.name + (best.latency != null ? ' ' + best.latency + 'ms' : '');
+    } else {
+      btn.href = mirrorUrl(DEFAULT_PREFIX, file);
+      btn.title = '默认镜像线路: ' + nameOf(DEFAULT_PREFIX);
+      if (meta) meta.textContent = state.probing ? ' · 测速中…' : ' · 默认线路';
+    }
+  }
+
+  function refresh() {
+    var asset = ASSETS[state.key] || null;
+    var url = asset ? officialUrl(asset.file) : RELEASES_PAGE;
+
+    var heroBtn = $('heroDownloadBtn');
+    if (heroBtn) heroBtn.href = url;
+    var heroText = $('heroDownloadText');
+    if (heroText) heroText.textContent = asset ? '下载 ' + asset.label + ' 版' : '查看全部版本';
+
+    var detected = $('detectedDevice');
+    if (detected) detected.textContent = asset ? asset.label : '未识别当前平台';
+
+    var recoBtn = $('recoDownloadBtn');
+    if (recoBtn) {
+      recoBtn.href = url;
+      recoBtn.textContent = asset ? '下载 ' + asset.label + ' 版' : '查看全部版本';
+    }
+
+    var note = $('deviceNote');
+    if (note) {
+      var base = asset ? asset.note : (state.note || '请前往 Releases 查看全部平台版本。');
+      note.textContent = state.probing ? base + ' 正在测速选择镜像线路…' : base;
+    }
+
+    var select = $('assetSelect');
+    if (select && select.value !== state.key) select.value = state.key;
+
+    renderMirrors();
+  }
+
+  function parseBanlist(text) {
+    return String(text || '').split(/\r?\n/).map(function (s) { return s.trim(); })
+      .filter(function (s) { return s && s.charAt(0) !== '#'; })
+      .map(function (s) {
+        var p = (s.indexOf('http://') === 0 || s.indexOf('https://') === 0) ? s : 'https://' + s;
+        return p.replace(/\/+$/, '');
+      });
+  }
+
+  function loadBanlist() {
+    if (typeof fetch === 'undefined') return Promise.resolve([]);
+    return fetch('proxyban.txt')
+      .then(function (r) { return r.ok ? r.text() : ''; })
+      .then(parseBanlist)
+      .catch(function () { return []; });
+  }
+
+  // 本地探针: Image 加载计时，无 CORS 依赖；onload/onerror 均视为可达
+  function probe(prefix) {
+    return new Promise(function (resolve) {
+      var t0 = Date.now();
+      var img = new Image();
+      var settled = false;
+      var timer = setTimeout(function () {
+        if (!settled) { settled = true; img.src = ''; resolve(null); }
+      }, 4000);
+      function ok() {
+        if (!settled) { settled = true; clearTimeout(timer); resolve({ prefix: prefix, latency: Date.now() - t0 }); }
+      }
+      img.onload = ok;
+      img.onerror = ok;
+      img.src = prefix + '/favicon.ico?_=' + t0;
+    });
+  }
+
+  function startProbe() {
+    loadBanlist().then(function (remoteBan) {
+      var banned = BLOCKLIST.concat(remoteBan);
+      var list = CANDIDATES.filter(function (p) { return banned.indexOf(p) === -1; });
+      return Promise.all(list.map(probe)).then(function (results) {
+        state.mirrors = results.filter(Boolean).map(function (r) {
+          return { prefix: r.prefix, name: nameOf(r.prefix), latency: r.latency };
+        }).sort(function (a, b) { return a.latency - b.latency; });
+        state.probing = false;
+        refresh();
+      });
+    }).catch(function () {
+      state.probing = false;
+      refresh();
+    });
+  }
+
+  var det = detect();
+  state.key = det.key;
+  state.note = det.note;
+  refresh();
+  startProbe();
+
+  var select = $('assetSelect');
+  if (select) {
+    select.addEventListener('change', function () {
+      state.override = true;
+      state.key = select.value;
+      state.note = select.value === 'all' ? '请前往 Releases 查看全部平台版本。' : '';
+      refresh();
+    });
+  }
+
+  // Chromium UA-CH 可识别 ARM 架构（Windows / Linux），用于修正默认 x64 推断
+  try {
+    if (navigator.userAgentData && navigator.userAgentData.getHighEntropyValues) {
+      navigator.userAgentData.getHighEntropyValues(['architecture']).then(function (h) {
+        if (!h || state.override) return;
+        var arch = String(h.architecture || '').toLowerCase();
+        if (arch !== 'arm') return;
+        if (state.key === 'windows-x64') { state.key = 'windows-arm64'; refresh(); }
+        else if (state.key === 'linux-x64') { state.key = 'linux-arm64'; refresh(); }
+      }).catch(function () {});
+    }
+  } catch (e) { /* ignore */ }
 })();
 </script>
 </body>
