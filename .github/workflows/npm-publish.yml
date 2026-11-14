@@ -209,7 +209,6 @@ jobs:
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org
-          package-manager-cache: false
 
       - name: Upgrade npm (Trusted Publishing requires npm >= 11.5.1)
         run: npm install -g npm@latest && npm --version
