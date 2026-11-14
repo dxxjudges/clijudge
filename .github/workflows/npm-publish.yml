@@ -207,8 +207,12 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+
+      - name: Upgrade npm (Trusted Publishing requires npm >= 11.5.1)
+        run: npm install -g npm@latest && npm --version
 
       - name: Validate package version against release tag
         if: github.event_name == 'release'
@@ -223,16 +227,10 @@ jobs:
           fi
 
       - name: Publish to npm
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          if [ -z "$NODE_AUTH_TOKEN" ]; then
-            echo "::notice::NPM_TOKEN secret is not set - skipping npm publish"
-            exit 0
-          fi
           PKG_VERSION=$(node -p "require('./package.json').version")
           if npm view "clijudge@$PKG_VERSION" version >/dev/null 2>&1; then
             echo "::notice::clijudge@$PKG_VERSION already on npm - skipping publish"
             exit 0
           fi
-          npm publish --access public --provenance
+          npm publish --access public
