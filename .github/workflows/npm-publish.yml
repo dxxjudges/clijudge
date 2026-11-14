@@ -1,8 +1,10 @@
 name: npm Publish
 
 on:
-  release:
-    types: [published]
+  workflow_run:
+    workflows: ["Build and Release"]
+    types: [completed]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -10,12 +12,59 @@ permissions:
   id-token: write
 
 jobs:
+  check:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    outputs:
+      is_release: ${{ steps.check.outputs.is_release }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.ref }}
+
+      - name: Detect new release
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          echo "is_release=false" >> "$GITHUB_OUTPUT"
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "is_release=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::manual dispatch - publishing package.json version"
+            exit 0
+          fi
+
+          VERSION=$(node -p "require('./package.json').version")
+
+          if ! gh api "repos/$REPO/releases/tags/v$VERSION" >/dev/null 2>&1; then
+            echo "::notice::no release v$VERSION - nothing to publish"
+            exit 0
+          fi
+
+          TAG_SHA=$(gh api "repos/$REPO/commits/v$VERSION" --jq '.sha' 2>/dev/null || true)
+          if [ "$TAG_SHA" != "$HEAD_SHA" ]; then
+            echo "::notice::release v$VERSION does not point to $HEAD_SHA - nothing new to publish"
+            exit 0
+          fi
+
+          echo "is_release=true" >> "$GITHUB_OUTPUT"
+          echo "::notice::release v$VERSION was created from $HEAD_SHA"
+
   build-windows:
+    needs: check
+    if: needs.check.outputs.is_release == 'true'
     runs-on: windows-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.ref }}
 
       - name: Setup MinGW (MSVCRT toolchain for Windows Vista)
         uses: bwoodsend/setup-winlibs-action@v1
@@ -52,11 +101,15 @@ jobs:
           path: clijudge.exe
 
   build-linux:
+    needs: check
+    if: needs.check.outputs.is_release == 'true'
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.ref }}
 
       - name: Build
         run: |
@@ -75,11 +128,15 @@ jobs:
           path: clijudge-linux.bin
 
   build-linux-arm64:
+    needs: check
+    if: needs.check.outputs.is_release == 'true'
     runs-on: ubuntu-24.04-arm
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.ref }}
 
       - name: Build
         run: |
@@ -98,11 +155,15 @@ jobs:
           path: clijudge-linux-arm64.bin
 
   build-windows-arm64:
+    needs: check
+    if: needs.check.outputs.is_release == 'true'
     runs-on: windows-11-arm
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.ref }}
 
       - name: Setup llvm-mingw
         shell: bash
@@ -141,11 +202,15 @@ jobs:
           path: clijudge-windows-arm64.exe
 
   build-android-arm64:
+    needs: check
+    if: needs.check.outputs.is_release == 'true'
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.ref }}
 
       - name: Build (Android NDK, bionic)
         run: |
@@ -162,12 +227,15 @@ jobs:
           path: clijudge-android-arm64.bin
 
   publish:
-    needs: [build-windows, build-linux, build-windows-arm64, build-linux-arm64, build-android-arm64]
+    needs: [check, build-windows, build-linux, build-windows-arm64, build-linux-arm64, build-android-arm64]
+    if: needs.check.outputs.is_release == 'true'
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.ref }}
 
       - name: Download Windows binary
         uses: actions/download-artifact@v4
@@ -212,18 +280,6 @@ jobs:
 
       - name: Upgrade npm (Trusted Publishing requires npm >= 11.5.1)
         run: npm install -g npm@latest && npm --version
-
-      - name: Validate package version against release tag
-        if: github.event_name == 'release'
-        env:
-          TAG: ${{ github.event.release.tag_name }}
-        run: |
-          PKG_VERSION=$(node -p "require('./package.json').version")
-          TAG_VERSION="${TAG#v}"
-          if [ "$PKG_VERSION" != "$TAG_VERSION" ]; then
-            echo "::error::package.json version ($PKG_VERSION) != release tag ($TAG_VERSION) - bump package.json in the build commit"
-            exit 1
-          fi
 
       - name: Publish to npm
         run: |
