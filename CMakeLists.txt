@@ -28,3 +28,15 @@ if(WIN32)
 endif()
 
 install(TARGETS clijudge RUNTIME DESTINATION bin)
+
+# 判题核心单测（纯函数，不依赖编译器/沙箱）：cmake -B build && cmake --build build && ctest --test-dir build
+option(CLIJUDGE_BUILD_TESTS "Build judge unit tests" ON)
+if(CLIJUDGE_BUILD_TESTS)
+  enable_testing()
+  add_executable(judge_tests tests/test_judge.cpp)
+  if(WIN32)
+    target_compile_definitions(judge_tests PRIVATE WINVER=0x0600 _WIN32_WINNT=0x0600)
+    target_link_libraries(judge_tests psapi userenv ole32 winhttp)
+  endif()
+  add_test(NAME judge_tests COMMAND judge_tests)
+endif()

@@ -63,6 +63,11 @@ jobs:
       - name: Build
         run: |
           g++ -std=c++17 -O2 -Wall -I include -o clijudge src/main.cpp
+
+      - name: Judge unit tests
+        run: |
+          g++ -std=c++17 -O2 -Wall -I include -o judge_tests tests/test_judge.cpp
+          ./judge_tests
       
       - name: Smoke test
         run: bash tests/smoke_linux.sh
