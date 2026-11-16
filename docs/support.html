@@ -72,12 +72,7 @@
   }
   nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 62px; }
   .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; letter-spacing: .5px; }
-  .brand .logo {
-    width: 30px; height: 30px; border-radius: 8px;
-    background: linear-gradient(135deg, var(--accent), var(--accent-2));
-    display: grid; place-items: center;
-    color: #fff; font-size: 14px; font-weight: 800;
-  }
+  .brand .logo { width: 30px; height: 30px; display: block; }
   .nav-links { display: flex; gap: 26px; font-size: 14px; color: var(--text-dim); }
   .nav-links a { transition: color .2s; }
   .nav-links a:hover { color: var(--text); }
@@ -200,7 +195,7 @@
 
 <nav>
   <div class="wrap">
-    <a class="brand" href="index.html"><span class="logo">CJ</span> CliJudge</a>
+    <a class="brand" href="index.html"><img class="logo" src="logo.svg" alt="" width="30" height="30"> CliJudge</a>
     <button class="nav-toggle" aria-label="菜单">☰</button>
     <div class="nav-links">
       <a href="index.html">首页</a>
@@ -380,7 +375,7 @@ clijudge.exe problem import problem_1.json</code></pre>
 
 <footer>
   <div class="wrap">
-    <a class="brand" href="index.html"><span class="logo">CJ</span> CliJudge</a>
+    <a class="brand" href="index.html"><img class="logo" src="logo.svg" alt="" width="30" height="30"> CliJudge</a>
     <p style="margin-top: 12px;">Windows / Linux 双平台命令行评测系统 · 开源 · MIT License</p>
     <p style="margin-top: 8px; display: flex; gap: 24px; justify-content: center; flex-wrap: wrap;">
       <a href="https://github.com/dxxjudges/clijudge" target="_blank" rel="noopener" style="color: var(--accent-2);">GitHub</a>

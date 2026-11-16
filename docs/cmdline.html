@@ -38,11 +38,7 @@
   }
   nav .wrap { max-width: 1200px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; height: 62px; }
   .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 17px; }
-  .brand .logo {
-    width: 30px; height: 30px; border-radius: 8px;
-    background: linear-gradient(135deg, var(--accent), var(--accent-2));
-    display: grid; place-items: center; color: #fff; font-size: 13px; font-weight: 800;
-  }
+  .brand .logo { width: 30px; height: 30px; display: block; }
   .nav-links { display: flex; gap: 22px; font-size: 13.5px; color: var(--text-dim); align-items: center; }
   .nav-links a { transition: color .2s; }
   .nav-links a:hover { color: var(--text); }
@@ -134,7 +130,7 @@
 
 <nav>
   <div class="wrap">
-    <a class="brand" href="index.html"><span class="logo">CJ</span> CliJudge 命令行文档</a>
+    <a class="brand" href="index.html"><img class="logo" src="logo.svg" alt="" width="30" height="30"> CliJudge 命令行文档</a>
     <button class="nav-toggle" aria-label="菜单">☰</button>
     <div class="nav-links">
       <a href="index.html">返回官网</a>
